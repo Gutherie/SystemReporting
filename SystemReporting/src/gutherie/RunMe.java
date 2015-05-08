@@ -106,11 +106,11 @@ public class RunMe {
 			if (conn != null && conn.isValid(5)){
 				InetAddress addr = InetAddress.getByName(address);
 				
-				PreparedStatement pstmt = conn.prepareStatement("INSERT INTO hosts VALUES (?, ?, ?, ?, ?)");
-				pstmt.setInt(1, addr.getAddress()[0]);
-				pstmt.setInt(2, addr.getAddress()[1]);
-				pstmt.setInt(3, addr.getAddress()[2]);
-				pstmt.setInt(4, addr.getAddress()[3]);
+				PreparedStatement pstmt = conn.prepareStatement("INSERT INTO hosts (ip_a, ip_b, ip_c, ip_d, hostname) VALUES (?, ?, ?, ?, ?)");
+				pstmt.setInt(1, 0x0000 ^ addr.getAddress()[0]);
+				pstmt.setInt(2, 0x0000 ^ addr.getAddress()[1]);
+				pstmt.setInt(3, 0x0000 ^ addr.getAddress()[2]);
+				pstmt.setInt(4, 0x0000 ^ addr.getAddress()[3]);
 				pstmt.setString(5, hostname);
 				pstmt.executeUpdate();
 				
@@ -163,9 +163,27 @@ public class RunMe {
 			int count = 0;
 			while (rs.next()){
 				count++;
-				System.out.println(rs.getInt(1) + " " + rs.getInt(2) + "." + rs.getInt(3) + "." + rs.getInt(4) + "." + rs.getInt(5) + " " + rs.getString(6));
-			}
+				
+				int a = rs.getInt(2);
+				if (a < 0){
+					a = 0xFF & a;
+				}
+				int b = rs.getInt(3);
+				if (b < 0){
+					b = 0xFF & b;
+				}
+				int c = rs.getInt(4);
+				if (c < 0){
+					c = 0xFF & c;
+				}
+				int d = rs.getInt(5);
+				if (d < 0){
+					d = 0xFF & d;
+				}
 
+				System.out.println(rs.getInt(1) + " " + a + "." + b + "." + c + "." + d + " " + rs.getString(6));
+			}
+			
 			if (count == 0){
 				System.out.println("No systems found.");
 			}
