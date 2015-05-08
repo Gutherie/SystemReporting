@@ -285,6 +285,10 @@ public class SimpleApp
             if (!failure) {
                 System.out.println("Verified the rows");
             }
+            
+            System.out.println("Hit any key to continue....table will be dropped.");
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            br.readLine();
 
             // delete the table
             s.execute("drop table location");
@@ -297,9 +301,7 @@ public class SimpleApp
             conn.commit();
             System.out.println("Committed the transaction");
             
-            System.out.println("Hit any key to continue....");
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            br.readLine();
+
             
 
             /*

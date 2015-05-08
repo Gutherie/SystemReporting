@@ -63,7 +63,7 @@ public class RunMe {
 		
 		System.out.print(GOODBYE);
 		
-		System.out.println(0);
+		System.exit(0);
 	}
 	
 	private static String getLine(String question){
@@ -81,18 +81,12 @@ public class RunMe {
 	private static String createDatabase(){
 		Connection conn = null;
 		try {
-			conn = DriverManager.getConnection(PROTOCOL + DBNAME + ";create=false");
-			if (conn == null || !conn.isValid(5)){
-				conn = DriverManager.getConnection(PROTOCOL + DBNAME + ";create=true");
-				conn.setAutoCommit(true);
-				Statement stmt = conn.createStatement();
-				stmt.execute(CREATETABLES);
+			conn = DriverManager.getConnection(PROTOCOL + DBNAME + ";create=true");
+			conn.setAutoCommit(true);
+			Statement stmt = conn.createStatement();
+			stmt.execute(CREATETABLES);
 				
-				return "Database created successfully";
-			}
-			else {
-				return "Database already exists";
-			}
+			return "Database created successfully";
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -114,11 +108,11 @@ public class RunMe {
 				
 				PreparedStatement pstmt = conn.prepareStatement("INSERT INTO hosts VALUES (?, ?, ?, ?, ?)");
 				pstmt.setInt(1, addr.getAddress()[0]);
-				pstmt.setInt(1, addr.getAddress()[1]);
-				pstmt.setInt(1, addr.getAddress()[2]);
-				pstmt.setInt(1, addr.getAddress()[3]);
+				pstmt.setInt(2, addr.getAddress()[1]);
+				pstmt.setInt(3, addr.getAddress()[2]);
+				pstmt.setInt(4, addr.getAddress()[3]);
 				pstmt.setString(5, hostname);
-				pstmt.execute();
+				pstmt.executeUpdate();
 				
 				return "Host addess successfully.";
 			}
@@ -215,7 +209,7 @@ public class RunMe {
 	
 	private static final String HELP = ""
 			+ "" + System.lineSeparator()
-			+ "To run checks without interaction, lauch this program with a single parameter 'auto'"
+			+ "To run checks without interaction, lauch this program with a single parameter 'auto'" + System.lineSeparator()
 			+ "\tsetup 	- setup database" + System.lineSeparator()
 			+ "\ttest 	- run tests" + System.lineSeparator()
 			+ "\tadd  	- add ip address to test" + System.lineSeparator()
