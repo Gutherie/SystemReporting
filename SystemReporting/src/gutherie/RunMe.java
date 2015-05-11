@@ -1,5 +1,8 @@
 package gutherie;
 
+import gutherie.testing.ServerTesting;
+import gutherie.testing.TestHTTPAccess;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -85,7 +88,7 @@ public class RunMe {
 			conn.setAutoCommit(true);
 			Statement stmt = conn.createStatement();
 			stmt.execute(CREATETABLES);
-				
+			conn.close();
 			return "Database created successfully";
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -106,14 +109,16 @@ public class RunMe {
 			if (conn != null && conn.isValid(5)){
 				InetAddress addr = InetAddress.getByName(address);
 				
-				PreparedStatement pstmt = conn.prepareStatement("INSERT INTO hosts (ip_a, ip_b, ip_c, ip_d, hostname) VALUES (?, ?, ?, ?, ?)");
+				PreparedStatement pstmt = conn.prepareStatement("INSERT INTO hosts (ip_a, ip_b, ip_c, ip_d, stringIP, hostname) VALUES (?, ?, ?, ?, ?, ?)");
 				pstmt.setInt(1, 0x0000 ^ addr.getAddress()[0]);
 				pstmt.setInt(2, 0x0000 ^ addr.getAddress()[1]);
 				pstmt.setInt(3, 0x0000 ^ addr.getAddress()[2]);
 				pstmt.setInt(4, 0x0000 ^ addr.getAddress()[3]);
-				pstmt.setString(5, hostname);
+				pstmt.setString(5, address.trim());
+				pstmt.setString(6, hostname);
 				pstmt.executeUpdate();
 				
+				conn.close();
 				return "Host addess successfully.";
 			}
 			else {
@@ -140,6 +145,7 @@ public class RunMe {
 			conn.setAutoCommit(true);
 			Statement stmt = conn.createStatement();
 			stmt.execute("DELETE FROM hosts WHERE id=" + id);
+			conn.close();
 			return "System Deleted.";
 			
 		} catch (SQLException e){
@@ -187,36 +193,89 @@ public class RunMe {
 			if (count == 0){
 				System.out.println("No systems found.");
 			}
+			conn.close();
 			
 		} catch (SQLException e){
 			System.out.println("Failed to get list : " + e.getMessage());
 		}
+		
 	}
-	
+
 	/*
 	 * Test all systems in the database
 	 */
 	private static void testSystems(){
-		String choice = getLine("Test one system or all systems (1, all)");
-		if (choice.compareToIgnoreCase("1")==0){
-			System.out.println("testing one....");
+		String choice = getLine("Test one system or all systems (id, all) where id is the integer ID of the host");
+		if (choice.compareToIgnoreCase("all")!=0){
+			testSystem(Integer.parseInt(choice));
 		}
 		else {
-			System.out.println("testing all....");
+			Connection conn = null;
+			ServerTesting tests = null;
+			try{	
+				conn = DriverManager.getConnection(RunMe.PROTOCOL + RunMe.DBNAME + ";create=false");
+				if (choice.compareToIgnoreCase("1")==0){
+					System.out.println("testing one....");
+				}
+				else {
+					System.out.println("testing all....");
+					if (conn != null && conn.isValid(5)){
+						conn.setAutoCommit(true);
+						Statement stmt = conn.createStatement();
+						ResultSet rs = stmt.executeQuery(SQL_GETALLHOSTS);
+						while (rs.next()){
+							tests = new ServerTesting(InetAddress.getByName(rs.getString("stringIP")));
+							tests.beginTesting();
+						}
+					}
+				}
+			
+				conn.close();
+			}catch (SQLException e){
+				System.out.println("Failed to get list : " + e.getMessage());
+			}catch (UnknownHostException e){
+				System.out.println("Failed to get list : " + e.getMessage());
+			}
 		}
-		
 	}
 	
 	/*
 	 * Test a single system
 	 */
 	private static void testSystem(int id){
+		String choice = getLine("Test one system or all systems (1, all)");
+		Connection conn = null;
+		ServerTesting tests = null;
+		try{	
+			conn = DriverManager.getConnection(RunMe.PROTOCOL + RunMe.DBNAME + ";create=false");
+			if (choice.compareToIgnoreCase("1")==0){
+				System.out.println("testing one....");
+			}
+			else {
+				System.out.println("testing all....");
+				if (conn != null && conn.isValid(5)){
+					conn.setAutoCommit(true);
+					Statement stmt = conn.createStatement();
+					ResultSet rs = stmt.executeQuery(SQL_GETALLHOSTS + " WHERE id=" + id);
+					while (rs.next()){
+						tests = new ServerTesting(InetAddress.getByName(rs.getString("stringIP")));
+						tests.beginTesting();
+						System.out.println(System.lineSeparator() + "Test data object: " + System.lineSeparator() + tests.getResults());
+					}
+				}
+			}
 		
+			conn.close();
+		}catch (SQLException e){
+			System.out.println("Failed to get list : " + e.getMessage());
+		}catch (UnknownHostException e){
+			System.out.println("Failed to get list : " + e.getMessage());
+		}			
 	}
 	
-    private static final String FRAMEWORK = "embedded";
-    private static final String PROTOCOL = "jdbc:derby:";
-    private static final String DBNAME = "ReportingDB";
+    public static final String FRAMEWORK = "embedded";
+    public static final String PROTOCOL = "jdbc:derby:";
+    public static final String DBNAME = "/home/jabaker/DEV/derby/ReportingDB";
 	private static final String INTRO = ""
 			+ "Welcome to the SystemReporting tool." + System.lineSeparator()
 			 + System.lineSeparator() 
@@ -227,7 +286,7 @@ public class RunMe {
 	
 	private static final String HELP = ""
 			+ "" + System.lineSeparator()
-			+ "To run checks without interaction, lauch this program with a single parameter 'auto'" + System.lineSeparator()
+			+ "To run checks without interaction, launch this program with a single parameter 'auto'" + System.lineSeparator()
 			+ "\tsetup 	- setup database" + System.lineSeparator()
 			+ "\ttest 	- run tests" + System.lineSeparator()
 			+ "\tadd  	- add ip address to test" + System.lineSeparator()
@@ -246,7 +305,8 @@ public class RunMe {
 			+ "  ip_b SMALLINT,"
 			+ "  ip_c SMALLINT,"
 			+ "  ip_d SMALLINT,"
+			+ "	 stringIP CHAR(15),"
 			+ "  hostname CHAR(100)"
 			+ ")";
-	
+	private static final String SQL_GETALLHOSTS = "SELECT * FROM hosts";
 }
