@@ -1,9 +1,12 @@
 package gutherie;
 
+import gutherie.mailer.Mailer;
 import gutherie.testing.ServerTesting;
 import gutherie.testing.TestHTTPAccess;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
@@ -15,6 +18,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.Date;
+import java.util.Properties;
 
 /*
  *   This file is part of SystemReporting.
@@ -36,9 +41,24 @@ import java.sql.Timestamp;
 public class RunMe {
 
 	public static void main(String[] args) {
+		
+		if (CONFIG_FILE && args.length > 0){
+			File configFile = new File(args[0]);
+			Properties config = new Properties();
+			try{
+				config.load(new BufferedReader(new FileReader(configFile)));
+				to = (String)config.get("to");
+				from = (String)config.get("from");
+				smtp = (String)config.get("smtp");
+			}catch(IOException e){
+				System.out.println("Failed to open config file : " + e.getMessage());
+				System.exit(1);;
+			}
+		}
+		
 		System.out.print(INTRO + System.lineSeparator() + HELP);
 		
-		if (args.length == 0){
+		if (args.length == 0 || (args.length == 1 && args[0].compareToIgnoreCase("auto")!= 0)){
 			String cmd = "";
 			while ((cmd = getLine("Enter Command: ")).compareToIgnoreCase("q") !=0){
 				if (cmd.compareToIgnoreCase("setup")==0){
@@ -63,7 +83,7 @@ public class RunMe {
 			
 		}
 		else {
-			if (args[1].compareToIgnoreCase("auto")==0){
+			if (args[0].compareToIgnoreCase("auto")==0){
 				System.out.println("STUB: run auto test here");
 			}
 		}
@@ -290,18 +310,31 @@ public class RunMe {
 	
 	private static void getResults(){
 		String choice = getLine("Enter the id (integer) of the host for which you would like to see results :");
+		String mailer = getLine("Would you like to mail the results (y/n) :");
 		Connection conn = null;
 
 		try{	
+			Mailer mail = null;
+			if (mailer.compareToIgnoreCase("y")==0){
+				Properties smtp = new Properties();
+				smtp.put("mail.smtp.host", smtp);
+				mail = new Mailer(smtp,from,to,"Result of testing on " + (new Date()).toString());
+			}
+			
 			conn = DriverManager.getConnection(RunMe.PROTOCOL + RunMe.DBNAME + ";create=false");
 			PreparedStatement pstmt = conn.prepareStatement(GET_TESTS);
 			pstmt.setInt(1, Integer.parseInt(choice));
 			ResultSet rs = pstmt.executeQuery();
 			while (rs.next()){
 				System.out.println(rs.getString("results"));
+				if (mail != null) {
+					mail.appendToMessage(rs.getString("results")+ "\n\n");
+				}
 			}
 
 			conn.close();
+			mail.sendMessage();
+
 		}catch (SQLException e){
 			System.out.println("Failed to get list : " + e.getMessage());
 		}
@@ -351,7 +384,12 @@ public class RunMe {
 			+ "  results VARCHAR(1000)"
 			+ ")"
 			+ "";
+	
+	private static final boolean CONFIG_FILE = true;
+	private static String smtp;
+	private static String to;
+	private static String from;
 	private static final String SQL_GETALLHOSTS = "SELECT * FROM hosts";
 	private static final String SAVE_TEST = "INSERT INTO testlog (hostid, timestamp, results) VALUES (?,?,?)";
-	private static final String GET_TESTS = "SELECT * FROM testlog WHERE hostid=?";
+	private static final String GET_TESTS = "SELECT * FROM testlog WHERE hostid=? ORDER BY timestamp DESC";
 }
