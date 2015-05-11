@@ -37,7 +37,7 @@ public class TestHTTPAccess implements HostTest {
 	public boolean runTest(InetAddress address) {
 		inetAddress = address;
 		report.append("Begin HTTP connection test for : " + address.getHostAddress() + System.lineSeparator());
-		long startTime = System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
 		report.append("Start\t\t: " + startTime + System.lineSeparator());
 		
 		URL url;
@@ -69,8 +69,9 @@ public class TestHTTPAccess implements HostTest {
 	@SuppressWarnings("unchecked")
 	public String getData(){
 		JSONObject data = new JSONObject();
-		data.put("host", inetAddress.toString());
+		data.put("host", inetAddress.getHostAddress());
 		data.put("status", testStatus);
+		data.put("timestamp", startTime);
 		data.put("duration", testDuration);
 		data.put("id", id);
 		data.put("description", description);
@@ -82,6 +83,7 @@ public class TestHTTPAccess implements HostTest {
 	public final static long id=1;
 	public final static String description = "HTTP connection test.";
 	private boolean testStatus;
+	private long startTime;
 	private long testDuration;
 	private StringBuffer report;
 	private InetAddress inetAddress;

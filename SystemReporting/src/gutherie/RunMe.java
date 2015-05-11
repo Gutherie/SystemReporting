@@ -14,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 
 /*
  *   This file is part of SystemReporting.
@@ -55,6 +56,9 @@ public class RunMe {
 				else if(cmd.compareToIgnoreCase("del")==0){
 					System.out.println(delSystem());					
 				}
+				else if(cmd.compareToIgnoreCase("results")==0){
+					getResults();
+				}
 			}
 			
 		}
@@ -87,7 +91,8 @@ public class RunMe {
 			conn = DriverManager.getConnection(PROTOCOL + DBNAME + ";create=true");
 			conn.setAutoCommit(true);
 			Statement stmt = conn.createStatement();
-			stmt.execute(CREATETABLES);
+			stmt.execute(CREATETABLE01);
+			stmt.execute(CREATETABLE02);
 			conn.close();
 			return "Database created successfully";
 		} catch (SQLException e) {
@@ -187,7 +192,7 @@ public class RunMe {
 					d = 0xFF & d;
 				}
 
-				System.out.println(rs.getInt(1) + " " + a + "." + b + "." + c + "." + d + " " + rs.getString(6));
+				System.out.println(rs.getInt(1) + " " + a + "." + b + "." + c + "." + d + " " + rs.getString(7));
 			}
 			
 			if (count == 0){
@@ -205,6 +210,7 @@ public class RunMe {
 	 * Test all systems in the database
 	 */
 	private static void testSystems(){
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		String choice = getLine("Test one system or all systems (id, all) where id is the integer ID of the host");
 		if (choice.compareToIgnoreCase("all")!=0){
 			testSystem(Integer.parseInt(choice));
@@ -226,6 +232,13 @@ public class RunMe {
 						while (rs.next()){
 							tests = new ServerTesting(InetAddress.getByName(rs.getString("stringIP")));
 							tests.beginTesting();
+							PreparedStatement pstmt = conn.prepareStatement(SAVE_TEST);
+							pstmt.setInt(1,rs.getInt(1));
+							pstmt.setTimestamp(2, timestamp);
+							pstmt.setString(3, tests.getResults());
+							pstmt.execute();
+							
+							System.out.println(System.lineSeparator() + "Test data object: " + System.lineSeparator() + tests.getResults());
 						}
 					}
 				}
@@ -262,6 +275,8 @@ public class RunMe {
 						tests.beginTesting();
 						System.out.println(System.lineSeparator() + "Test data object: " + System.lineSeparator() + tests.getResults());
 					}
+					
+					
 				}
 			}
 		
@@ -273,6 +288,25 @@ public class RunMe {
 		}			
 	}
 	
+	private static void getResults(){
+		String choice = getLine("Enter the id (integer) of the host for which you would like to see results :");
+		Connection conn = null;
+
+		try{	
+			conn = DriverManager.getConnection(RunMe.PROTOCOL + RunMe.DBNAME + ";create=false");
+			PreparedStatement pstmt = conn.prepareStatement(GET_TESTS);
+			pstmt.setInt(1, Integer.parseInt(choice));
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()){
+				System.out.println(rs.getString("results"));
+			}
+
+			conn.close();
+		}catch (SQLException e){
+			System.out.println("Failed to get list : " + e.getMessage());
+		}
+	}
+	
     public static final String FRAMEWORK = "embedded";
     public static final String PROTOCOL = "jdbc:derby:";
     public static final String DBNAME = "/home/jabaker/DEV/derby/ReportingDB";
@@ -280,25 +314,26 @@ public class RunMe {
 			+ "Welcome to the SystemReporting tool." + System.lineSeparator()
 			 + System.lineSeparator() 
 			+ "SystemReporting  Copyright (C) 2015  Jason R. Baker" + System.lineSeparator()
-			+ "This program comes with ABSOLUTELY NO WARRANTY." + System.lineSeparator()
+			+ "Thisqls program comes with ABSOLUTELY NO WARRANTY." + System.lineSeparator()
 			+ "This is free software, and you are welcome to redistribute it" + System.lineSeparator()
 			+ "under certain conditions.";
 	
 	private static final String HELP = ""
 			+ "" + System.lineSeparator()
 			+ "To run checks without interaction, launch this program with a single parameter 'auto'" + System.lineSeparator()
-			+ "\tsetup 	- setup database" + System.lineSeparator()
-			+ "\ttest 	- run tests" + System.lineSeparator()
-			+ "\tadd  	- add ip address to test" + System.lineSeparator()
-			+ "\tlist 	- list ip addresses to test" + System.lineSeparator()
-			+ "\tdel 	- delete ip address from test" + System.lineSeparator()
+			+ "\tsetup 	 - setup database" + System.lineSeparator()
+			+ "\ttest 	 - run tests" + System.lineSeparator()
+			+ "\tresults - Get test results" +  System.lineSeparator()
+			+ "\tadd  	 - add ip address to test" + System.lineSeparator()
+			+ "\tlist 	 - list ip addresses to test" + System.lineSeparator()
+			+ "\tdel 	 - delete ip address from test" + System.lineSeparator()
 			+ "" + System.lineSeparator()
-			+ "\tq 		- quit" + System.lineSeparator()
+			+ "\tq 		 - quit" + System.lineSeparator()
 			+ ""
 			+ "";
 	
 	private static final String GOODBYE = "Good night and keep your stick on the ice.";
-	private static final String CREATETABLES = ""
+	private static final String CREATETABLE01 = ""
 			+ "CREATE TABLE hosts("
 			+ "  id INT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),"
 			+ "  ip_a SMALLINT,"
@@ -308,5 +343,15 @@ public class RunMe {
 			+ "	 stringIP CHAR(15),"
 			+ "  hostname CHAR(100)"
 			+ ")";
+	private static final String CREATETABLE02 = ""
+			+ "CREATE TABLE testlog("
+			+ "  id INT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),"
+			+ "  hostid INT,"
+			+ "  timestamp TIMESTAMP,"
+			+ "  results VARCHAR(1000)"
+			+ ")"
+			+ "";
 	private static final String SQL_GETALLHOSTS = "SELECT * FROM hosts";
+	private static final String SAVE_TEST = "INSERT INTO testlog (hostid, timestamp, results) VALUES (?,?,?)";
+	private static final String GET_TESTS = "SELECT * FROM testlog WHERE hostid=?";
 }
