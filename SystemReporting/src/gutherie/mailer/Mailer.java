@@ -1,5 +1,22 @@
 package gutherie.mailer;
 
+/*
+ *   This file is part of SystemReporting.
+ *
+ *   SystemReporting is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   SystemReporting is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with SystemReporting.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 import java.util.Date;
 import java.util.Properties;
 
@@ -24,15 +41,15 @@ public class Mailer {
 	}
 	
 	public void appendToMessage(String text){
-		message.append(text);
+		textMessage.append(text);
 	}
 	
 	public void clearMessage(){
-		message = new StringBuffer();
+		textMessage = new StringBuffer();
 	}
 	
 	public String getMessage(){
-		return message.toString();
+		return textMessage.toString();
 	}
 	
 	public boolean sendMessage(){
@@ -45,13 +62,12 @@ public class Mailer {
 		    message.setRecipients(Message.RecipientType.TO, toAddresses);
 		    message.setSubject(subject);
 		    message.setSentDate(new Date());
-		    message.setText(message.toString());
+		    message.setText(textMessage.toString());
+		    //message.setText("Test Message");
 		    message.setHeader("X-mailer", "DFMMAIL");
 		    
-		    SMTPTransport transport = (SMTPTransport)session.getTransport("smtp");
-		    transport.connect((String)properties.get("mail.smtp.host"));
-		    transport.sendMessage(message, message.getAllRecipients());      
-		    transport.close();
+		    Transport.send(message);
+
 
 			
 			return true;
@@ -64,13 +80,13 @@ public class Mailer {
 	}
 	
 	private void init(){
-		message = new StringBuffer();
+		textMessage = new StringBuffer();
 	}
 	
 	private String from;
 	private String to;
 	private String subject;
 	private Properties properties;
-	private StringBuffer message;
+	private StringBuffer textMessage;
 	
 }

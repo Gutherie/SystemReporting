@@ -43,13 +43,16 @@ public class RunMe {
 	public static void main(String[] args) {
 		
 		if (CONFIG_FILE && args.length > 0){
+			System.out.println("Found smtp config: ");
 			File configFile = new File(args[0]);
-			Properties config = new Properties();
+			config = new Properties();
+			
 			try{
 				config.load(new BufferedReader(new FileReader(configFile)));
-				to = (String)config.get("to");
-				from = (String)config.get("from");
-				smtp = (String)config.get("smtp");
+				System.out.println(config.toString());
+				to = (String)config.get("mail.to");
+				from = (String)config.get("mail.from");
+				smtp = (String)config.get("mail.smtp.host");
 			}catch(IOException e){
 				System.out.println("Failed to open config file : " + e.getMessage());
 				System.exit(1);;
@@ -157,7 +160,7 @@ public class RunMe {
 		}
 	}
 	
-	/*
+	/*erties
 	 * delete system from the database
 	 */
 	private static String delSystem(){
@@ -316,9 +319,7 @@ public class RunMe {
 		try{	
 			Mailer mail = null;
 			if (mailer.compareToIgnoreCase("y")==0){
-				Properties smtp = new Properties();
-				smtp.put("mail.smtp.host", smtp);
-				mail = new Mailer(smtp,from,to,"Result of testing on " + (new Date()).toString());
+				mail = new Mailer(config,from,to,"Result of testing on " + (new Date()).toString());
 			}
 			
 			conn = DriverManager.getConnection(RunMe.PROTOCOL + RunMe.DBNAME + ";create=false");
@@ -333,7 +334,9 @@ public class RunMe {
 			}
 
 			conn.close();
-			mail.sendMessage();
+			if (mailer.compareToIgnoreCase("y")==0){
+				mail.sendMessage();
+			}
 
 		}catch (SQLException e){
 			System.out.println("Failed to get list : " + e.getMessage());
@@ -389,6 +392,7 @@ public class RunMe {
 	private static String smtp;
 	private static String to;
 	private static String from;
+	private static Properties config;
 	private static final String SQL_GETALLHOSTS = "SELECT * FROM hosts";
 	private static final String SAVE_TEST = "INSERT INTO testlog (hostid, timestamp, results) VALUES (?,?,?)";
 	private static final String GET_TESTS = "SELECT * FROM testlog WHERE hostid=? ORDER BY timestamp DESC";
