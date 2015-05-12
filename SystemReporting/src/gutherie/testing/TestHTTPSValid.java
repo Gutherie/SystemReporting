@@ -18,20 +18,13 @@ package gutherie.testing;
  */
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
 import org.json.simple.JSONObject;
 
-public class TestHTTPAccess implements HostTest {
-	public TestHTTPAccess(){
-		report = new StringBuffer();
-		testStatus = false;
-		testDuration = 0;
-	}
+public class TestHTTPSValid implements HostTest {
 
 	@Override
 	public boolean runTest(InetAddress address, InetAddress hostName) {
@@ -43,7 +36,7 @@ public class TestHTTPAccess implements HostTest {
 		
 		URL url;
 		try {
-			url = new URL("http://"+ address.getHostAddress());
+			url = new URL("https://"+ address.getHostAddress());
 			URLConnection urlcon = url.openConnection();
 			urlcon.connect();
 			long endTime = System.currentTimeMillis();
@@ -57,9 +50,6 @@ public class TestHTTPAccess implements HostTest {
 			report.append("Error, test did not complete successfully: " + e.getMessage());
 			return testStatus;
 		}
-
-		
-		
 	}
 
 	@Override
@@ -73,7 +63,7 @@ public class TestHTTPAccess implements HostTest {
 		data.put("host", inetAddress.getHostAddress());
 		data.put("status", testStatus);
 		data.put("timestamp", startTime);
-		data.put("duration", testDuration);
+
 		data.put("id", id);
 		data.put("description", description);
 		if (inetHost != null && (inetAddress.getHostAddress().compareToIgnoreCase(inetHost.getHostAddress())==0)){
@@ -85,10 +75,8 @@ public class TestHTTPAccess implements HostTest {
 		return data.toJSONString();
 	}
 	
-
-	
-	public final static long id=1;
-	public final static String description = "HTTP connection test.";
+	public final static long id=2;
+	public final static String description = "HTTPS Certificate Validity.";
 	private boolean testStatus;
 	private long startTime;
 	private long testDuration;

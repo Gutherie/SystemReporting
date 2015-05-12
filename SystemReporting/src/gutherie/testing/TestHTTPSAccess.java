@@ -17,44 +17,26 @@ package gutherie.testing;
  *   along with SystemReporting.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 import java.net.InetAddress;
-import java.util.Vector;
 
-import org.json.simple.JSONArray;
+public class TestHTTPSAccess implements HostTest {
 
-
-public class ServerTesting {
-	public ServerTesting(InetAddress addr, InetAddress hostname){
-		super();
-		init();
-		hostByAddress = addr;
-		hostByName = hostname;
-	}
-	
-	public boolean beginTesting(){
-		for (int i = 0; i < tests.size(); i++){
-			tests.get(i).runTest(hostByAddress,hostByName);
-			System.out.println(tests.get(i).getReport());
-			results.add(tests.get(i).getData());
-		}
-		
+	@Override
+	public boolean runTest(InetAddress address, InetAddress hostName) {
+		// TODO Auto-generated method stub
 		return false;
 	}
-	
-	public String getResults(){
-		return results.toJSONString();
+
+	@Override
+	public String getReport() {
+		// TODO Auto-generated method stub
+		return null;
 	}
-	
-	
-	private void init(){
-		results = new JSONArray();
-		tests = new Vector<HostTest>();
-		tests.add(new TestHTTPAccess());
+
+	@Override
+	public String getData() {
+		// TODO Auto-generated method stub
+		return null;
 	}
-	
-	private InetAddress hostByAddress;
-	private InetAddress hostByName;
-	private Vector<HostTest> tests;
-	private JSONArray results;
+
 }
