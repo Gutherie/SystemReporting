@@ -25,7 +25,7 @@ import org.json.simple.JSONArray;
 
 
 public class ServerTesting {
-	public ServerTesting(InetAddress addr, InetAddress hostname){
+	public ServerTesting(String addr, String hostname){
 		super();
 		init();
 		hostByAddress = addr;
@@ -51,10 +51,11 @@ public class ServerTesting {
 		results = new JSONArray();
 		tests = new Vector<HostTest>();
 		tests.add(new TestHTTPAccess());
+		tests.add(new TestHTTPSAccess());
 	}
 	
-	private InetAddress hostByAddress;
-	private InetAddress hostByName;
+	private String hostByAddress;
+	private String hostByName;
 	private Vector<HostTest> tests;
 	private JSONArray results;
 }

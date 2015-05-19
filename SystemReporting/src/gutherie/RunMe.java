@@ -257,12 +257,7 @@ public class RunMe {
 						InetAddress byHostNameAddr = null;
 						
 						while (rs.next()){
-							try{
-								byHostNameAddr = InetAddress.getByName(rs.getString("hostname"));
-							} catch(UnknownHostException e){
-								System.out.println("Warning: failed to get host by name: " + e.getMessage());
-							}
-							tests = new ServerTesting(InetAddress.getByName(rs.getString("stringIP")),byHostNameAddr);
+							tests = new ServerTesting(rs.getString("stringIP"),rs.getString("hostname"));
 							tests.beginTesting();
 							PreparedStatement pstmt = conn.prepareStatement(SAVE_TEST);
 							pstmt.setInt(1,rs.getInt(1));
@@ -278,8 +273,6 @@ public class RunMe {
 				conn.close();
 			}catch (SQLException e){
 				System.out.println("Failed to get list, SQL error : " + e.getMessage());
-			}catch (UnknownHostException e){
-				System.out.println("Abort: Failed to get host by address : " + e.getMessage());
 			}
 		}
 	}
@@ -303,7 +296,7 @@ public class RunMe {
 					Statement stmt = conn.createStatement();
 					ResultSet rs = stmt.executeQuery(SQL_GETALLHOSTS + " WHERE id=" + id);
 					while (rs.next()){
-						tests = new ServerTesting(InetAddress.getByName(rs.getString("stringIP")), InetAddress.getByName(rs.getString("hostname")));
+						tests = new ServerTesting(rs.getString("stringIP"), rs.getString("hostname"));
 						tests.beginTesting();
 						System.out.println(System.lineSeparator() + "Test data object: " + System.lineSeparator() + tests.getResults());
 					}
@@ -315,9 +308,7 @@ public class RunMe {
 			conn.close();
 		}catch (SQLException e){
 			System.out.println("Failed to execute query : " + e.getMessage());
-		}catch (UnknownHostException e){
-			System.out.println("Failed to get host information : " + e.getMessage());
-		}			
+		}		
 	}
 	
 	private static void getResults(){

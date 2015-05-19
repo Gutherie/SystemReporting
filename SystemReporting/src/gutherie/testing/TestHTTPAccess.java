@@ -31,19 +31,20 @@ public class TestHTTPAccess implements HostTest {
 		report = new StringBuffer();
 		testStatus = false;
 		testDuration = 0;
+		errormsg = "";
 	}
 
 	@Override
-	public boolean runTest(InetAddress address, InetAddress hostName) {
+	public boolean runTest(String address, String hostName) {
 		inetAddress = address;
 		inetHost = hostName;
-		report.append("Begin HTTP connection test for : " + address.getHostAddress() + System.lineSeparator());
+		report.append("Begin HTTP connection test for : " + address + System.lineSeparator());
 		startTime = System.currentTimeMillis();
 		report.append("Start\t\t: " + startTime + System.lineSeparator());
 		
 		URL url;
 		try {
-			url = new URL("http://"+ address.getHostAddress());
+			url = new URL("http://"+ address);
 			URLConnection urlcon = url.openConnection();
 			urlcon.connect();
 			long endTime = System.currentTimeMillis();
@@ -54,6 +55,7 @@ public class TestHTTPAccess implements HostTest {
 			testStatus = true;
 			return testStatus;		
 		} catch (IOException e) {
+			errormsg = e.getMessage();
 			report.append("Error, test did not complete successfully: " + e.getMessage());
 			return testStatus;
 		}
@@ -70,18 +72,13 @@ public class TestHTTPAccess implements HostTest {
 	@SuppressWarnings("unchecked")
 	public String getData(){
 		JSONObject data = new JSONObject();
-		data.put("host", inetAddress.getHostAddress());
+		data.put("host", inetAddress);
 		data.put("status", testStatus);
 		data.put("timestamp", startTime);
 		data.put("duration", testDuration);
 		data.put("id", id);
 		data.put("description", description);
-		if (inetHost != null && (inetAddress.getHostAddress().compareToIgnoreCase(inetHost.getHostAddress())==0)){
-			data.put("addressMatch", true);
-		}
-		else {
-			data.put("addressMatch", false);
-		}
+
 		return data.toJSONString();
 	}
 	
@@ -92,7 +89,8 @@ public class TestHTTPAccess implements HostTest {
 	private boolean testStatus;
 	private long startTime;
 	private long testDuration;
+	private String errormsg;
 	private StringBuffer report;
-	private InetAddress inetAddress;
-	private InetAddress inetHost;
+	private String inetAddress;
+	private String inetHost;
 }

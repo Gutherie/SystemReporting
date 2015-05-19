@@ -18,7 +18,6 @@ package gutherie.testing;
  */
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -27,16 +26,16 @@ import org.json.simple.JSONObject;
 public class TestHTTPSValid implements HostTest {
 
 	@Override
-	public boolean runTest(InetAddress address, InetAddress hostName) {
+	public boolean runTest(String address, String hostName) {
 		inetAddress = address;
 		inetHost = hostName;
-		report.append("Begin HTTP connection test for : " + address.getHostAddress() + System.lineSeparator());
+		report.append("Begin HTTP connection test for : " + address + System.lineSeparator());
 		startTime = System.currentTimeMillis();
 		report.append("Start\t\t: " + startTime + System.lineSeparator());
 		
 		URL url;
 		try {
-			url = new URL("https://"+ address.getHostAddress());
+			url = new URL("https://"+ address);
 			URLConnection urlcon = url.openConnection();
 			urlcon.connect();
 			long endTime = System.currentTimeMillis();
@@ -60,18 +59,13 @@ public class TestHTTPSValid implements HostTest {
 	@SuppressWarnings("unchecked")
 	public String getData(){
 		JSONObject data = new JSONObject();
-		data.put("host", inetAddress.getHostAddress());
+		data.put("host", inetAddress);
 		data.put("status", testStatus);
 		data.put("timestamp", startTime);
 
 		data.put("id", id);
 		data.put("description", description);
-		if (inetHost != null && (inetAddress.getHostAddress().compareToIgnoreCase(inetHost.getHostAddress())==0)){
-			data.put("addressMatch", true);
-		}
-		else {
-			data.put("addressMatch", false);
-		}
+
 		return data.toJSONString();
 	}
 	
@@ -81,6 +75,6 @@ public class TestHTTPSValid implements HostTest {
 	private long startTime;
 	private long testDuration;
 	private StringBuffer report;
-	private InetAddress inetAddress;
-	private InetAddress inetHost;
+	private String inetAddress;
+	private String inetHost;
 }
