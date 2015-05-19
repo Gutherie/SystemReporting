@@ -18,10 +18,22 @@ package gutherie.testing;
  */
 
 import java.io.IOException;
-
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.SSLSocketFactory;
+
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.X509TrustManager;
+
 import org.json.simple.JSONObject;
 
 public class TestHTTPSAccess implements HostTest {
@@ -39,31 +51,82 @@ public class TestHTTPSAccess implements HostTest {
 		report.append("Begin HTTPS connection test for : " + address + System.lineSeparator());
 		startTime = System.currentTimeMillis();
 		report.append("Start\t\t: " + startTime + System.lineSeparator());
+		HostnameVerifier originalVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
 		
-		URL url;
-		try {
-			url = new URL("https://"+ hostName);
-			try{
-				HttpsURLConnection con = (HttpsURLConnection)url.openConnection();
-				con.connect();
-				long endTime = System.currentTimeMillis();
-				testDuration = endTime - startTime;
-				report.append("End\t\t: " + endTime + System.lineSeparator());
-				report.append("Duration\t: " + testDuration + System.lineSeparator());
-				report.append("Test completed successfully.");
-				testStatus = true;
-				return testStatus;
-			}catch(IOException e1){
+		
+		// Not worried about self-signed certificates
+		TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager(){
+					public java.security.cert.X509Certificate[] getAcceptedIssuers(){
+						return null;
+					}
+					public void checkClientTrusted(X509Certificate[] certs, String authType){
+						
+					}
+					public void checkServerTrusted(X509Certificate[] certs, String authType){
+						
+					}
+				}
+		};
+		try{
+			SSLContext sslctx = SSLContext.getInstance("SSL");
+			sslctx.init(null, trustAllCerts, new java.security.SecureRandom());
+
+			HttpsURLConnection.setDefaultSSLSocketFactory(sslctx.getSocketFactory());
+			HostnameVerifier allHostsValid = new HostnameVerifier(){
+				@Override
+				public boolean verify(String arg0, SSLSession arg1) {
+					return true;
+				}
+			};
+			
+			
+			HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+			
+			
+			URL url;
+			try {
+				url = new URL("https://"+ hostName);
+				try{
+					HttpsURLConnection con = (HttpsURLConnection)url.openConnection();
+					con.connect();
+					long endTime = System.currentTimeMillis();
+					testDuration = endTime - startTime;
+					report.append("End\t\t: " + endTime + System.lineSeparator());
+					report.append("Duration\t: " + testDuration + System.lineSeparator());
+					report.append("Test completed successfully.");
+					testStatus = true;
+					return testStatus;
+				}catch(IOException e1){
+					testStatus = false;
+					errormsg = e1.getMessage();
+					report.append("ERROR: " + e1.getMessage() + System.lineSeparator());
+					return testStatus;
+				}
+			} catch (MalformedURLException e) {
 				testStatus = false;
-				errormsg = e1.getMessage();
-				report.append("ERROR: " + e1.getMessage() + System.lineSeparator());
+				errormsg = e.getMessage();
+				report.append("ERROR: " + e.getMessage() + System.lineSeparator());
 				return testStatus;
 			}
-		} catch (MalformedURLException e) {
+		}catch(NoSuchAlgorithmException e){
 			testStatus = false;
 			errormsg = e.getMessage();
 			report.append("ERROR: " + e.getMessage() + System.lineSeparator());
 			return testStatus;
+		}catch(KeyManagementException e){
+			testStatus = false;
+			errormsg = e.getMessage();
+			report.append("ERROR: " + e.getMessage() + System.lineSeparator());
+			return testStatus;
+		}finally {
+			// return the verifier to the original
+
+			try{
+				HttpsURLConnection.setDefaultSSLSocketFactory(SSLContext.getDefault().getSocketFactory());
+			}catch(NoSuchAlgorithmException e){
+				System.out.println("ERROR reseting HTTPS connection verification : " + e.getMessage());
+			}
+			
 		}
 	}
 

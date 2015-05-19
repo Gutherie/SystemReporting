@@ -18,37 +18,68 @@ package gutherie.testing;
  */
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.cert.Certificate;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.json.simple.JSONObject;
 
 public class TestHTTPSValid implements HostTest {
-
+	public TestHTTPSValid(){
+		report = new StringBuffer();
+		testStatus = false;
+		testDuration = 0;
+		errormsg = "";
+	}
 	@Override
 	public boolean runTest(String address, String hostName) {
 		inetAddress = address;
 		inetHost = hostName;
-		report.append("Begin HTTP connection test for : " + address + System.lineSeparator());
+		report.append("Begin HTTPS Certificate Validity test for : " + address + System.lineSeparator());
 		startTime = System.currentTimeMillis();
 		report.append("Start\t\t: " + startTime + System.lineSeparator());
 		
 		URL url;
 		try {
 			url = new URL("https://"+ address);
-			URLConnection urlcon = url.openConnection();
-			urlcon.connect();
-			long endTime = System.currentTimeMillis();
-			testDuration = endTime - startTime;
-			report.append("End\t\t: " + endTime + System.lineSeparator());
-			report.append("Duration\t: " + testDuration + System.lineSeparator());
-			report.append("Test completed successfully.");
-			testStatus = true;
-			return testStatus;		
-		} catch (IOException e) {
+			try{
+				HttpsURLConnection con = (HttpsURLConnection)url.openConnection();
+				con.connect();
+				
+				// check the certificates
+				Certificate[] certificates = null;
+				System.out.println("Attempting to get certificates....");
+				try{
+					certificates = con.getServerCertificates();
+					System.out.println("Got certificates: " + certificates.length);
+					//for (int i = 0; i < certificates.length; i++){
+					//	System.out.println("\tCertificate " + i + " : " + certificates[i].getPublicKey().toString() + System.lineSeparator());
+					//}
+				}catch (SSLPeerUnverifiedException e3){
+					System.out.println("Unverified Peer error : " + e3.getMessage());
+				}
+				
+				
+				long endTime = System.currentTimeMillis();
+				testDuration = endTime - startTime;
+				report.append("End\t\t: " + endTime + System.lineSeparator());
+				report.append("Duration\t: " + testDuration + System.lineSeparator());
+				report.append("Test completed successfully.");
+				testStatus = true;
+				return testStatus;
+			}catch(IOException e1){
+				errormsg = e1.getMessage();
+				report.append("Error, test did not complete successfully: " + e1.getMessage());
+			}
+		} catch (MalformedURLException e) {
+			errormsg = e.getMessage();
 			report.append("Error, test did not complete successfully: " + e.getMessage());
-			return testStatus;
 		}
+		return testStatus;
 	}
 
 	@Override
@@ -62,14 +93,13 @@ public class TestHTTPSValid implements HostTest {
 		data.put("host", inetAddress);
 		data.put("status", testStatus);
 		data.put("timestamp", startTime);
-
 		data.put("id", id);
 		data.put("description", description);
-
+		data.put("errormsg", errormsg);
 		return data.toJSONString();
 	}
 	
-	public final static long id=2;
+	public final static long id=3;
 	public final static String description = "HTTPS Certificate Validity.";
 	private boolean testStatus;
 	private long startTime;
@@ -77,4 +107,5 @@ public class TestHTTPSValid implements HostTest {
 	private StringBuffer report;
 	private String inetAddress;
 	private String inetHost;
+	private String errormsg;
 }

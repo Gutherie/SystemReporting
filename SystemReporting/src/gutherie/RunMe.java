@@ -350,7 +350,7 @@ public class RunMe {
 			+ "Welcome to the SystemReporting tool." + System.lineSeparator()
 			 + System.lineSeparator() 
 			+ "SystemReporting  Copyright (C) 2015  Jason R. Baker" + System.lineSeparator()
-			+ "Thisqls program comes with ABSOLUTELY NO WARRANTY." + System.lineSeparator()
+			+ "This program comes with ABSOLUTELY NO WARRANTY." + System.lineSeparator()
 			+ "This is free software, and you are welcome to redistribute it" + System.lineSeparator()
 			+ "under certain conditions.";
 	

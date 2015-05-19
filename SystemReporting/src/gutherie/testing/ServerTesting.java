@@ -33,10 +33,13 @@ public class ServerTesting {
 	}
 	
 	public boolean beginTesting(){
+		boolean status = true;
 		for (int i = 0; i < tests.size(); i++){
-			tests.get(i).runTest(hostByAddress,hostByName);
+			status = status & tests.get(i).runTest(hostByAddress,hostByName);
 			System.out.println(tests.get(i).getReport());
 			results.add(tests.get(i).getData());
+			
+			//System.out.println("Test Data: " + i + "\n" + tests.get(i));
 		}
 		
 		return false;
@@ -50,8 +53,11 @@ public class ServerTesting {
 	private void init(){
 		results = new JSONArray();
 		tests = new Vector<HostTest>();
+		
 		tests.add(new TestHTTPAccess());
 		tests.add(new TestHTTPSAccess());
+		tests.add(new TestHTTPSValid());
+		
 	}
 	
 	private String hostByAddress;
